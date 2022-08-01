@@ -1,0 +1,28 @@
+namespace flatbuf;
+
+table Quote {
+  symbol:string;
+  bid_exchange:ubyte;
+  bid_price:double;
+  bid_size:uint32;
+  ask_exchange:ubyte;
+  ask_price:double;
+  ask_size:uint32;
+  timestamp:uint64;
+  conditions:[ubyte];
+  nbbo:bool;
+  tape:ubyte;
+  received_at:uint64;
+}
+
+table RawQuote {
+  data:[ubyte] (nested_flatbuffer: "Quote");
+}
+
+table RawQuoteBatch {
+  raw_quotes:[RawQuote];
+}
+
+table QuoteBatch {
+  quotes:[Quote];
+}
