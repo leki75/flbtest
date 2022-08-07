@@ -58,33 +58,87 @@ func BenchmarkQuoteMarshal(b *testing.B) {
 	}
 }
 
-func BenchmarkQuoteMarshalUnmarshal(b *testing.B) {
+func BenchmarkQuoteUnmarshal(b *testing.B) {
 	quote := new(flatbuf.Quote)
+	qb := quoteBatch()
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
-		batch := flatbuf.GetRootAsQuoteBatch(quoteBatch(), 0)
+		batch := flatbuf.GetRootAsQuoteBatch(qb, 0)
+
 		batch.Quotes(quote, 0)
 		_ = quote.Symbol()
+		_ = quote.AskExchange()
+		_ = quote.AskPrice()
+		_ = quote.AskSize()
+		_ = quote.BidExchange()
+		_ = quote.BidPrice()
+		_ = quote.BidSize()
+		_ = quote.Timestamp()
+		_ = quote.ConditionsBytes()
+		_ = quote.Nbbo()
+		_ = quote.Tape()
+		_ = quote.ReceivedAt()
+
 		batch.Quotes(quote, 1)
 		_ = quote.Symbol()
+		_ = quote.AskExchange()
+		_ = quote.AskPrice()
+		_ = quote.AskSize()
+		_ = quote.BidExchange()
+		_ = quote.BidPrice()
+		_ = quote.BidSize()
+		_ = quote.Timestamp()
+		_ = quote.ConditionsBytes()
+		_ = quote.Nbbo()
+		_ = quote.Tape()
+		_ = quote.ReceivedAt()
 	}
 }
 
 func BenchmarkRawQuoteMarshal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_ = quoteBatch()
+		_ = rawQuoteBatch()
 	}
 }
 
-func BenchmarkRawQuoteMarhsalUnmarshal(b *testing.B) {
+func BenchmarkRawQuoteUnmarshal(b *testing.B) {
 	var quote *flatbuf.Quote
 	rawQuote := new(flatbuf.RawQuote)
+	qb := rawQuoteBatch()
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
-		batch := flatbuf.GetRootAsRawQuoteBatch(rawQuoteBatch(), 0)
+		batch := flatbuf.GetRootAsRawQuoteBatch(qb, 0)
+
 		batch.RawQuotes(rawQuote, 0)
 		quote = flatbuf.GetRootAsQuote(rawQuote.DataBytes(), 0)
 		_ = quote.Symbol()
+		_ = quote.AskExchange()
+		_ = quote.AskPrice()
+		_ = quote.AskSize()
+		_ = quote.BidExchange()
+		_ = quote.BidPrice()
+		_ = quote.BidSize()
+		_ = quote.Timestamp()
+		_ = quote.ConditionsBytes()
+		_ = quote.Nbbo()
+		_ = quote.Tape()
+		_ = quote.ReceivedAt()
+
 		batch.RawQuotes(rawQuote, 1)
 		quote = flatbuf.GetRootAsQuote(rawQuote.DataBytes(), 0)
 		_ = quote.Symbol()
+		_ = quote.AskExchange()
+		_ = quote.AskPrice()
+		_ = quote.AskSize()
+		_ = quote.BidExchange()
+		_ = quote.BidPrice()
+		_ = quote.BidSize()
+		_ = quote.Timestamp()
+		_ = quote.ConditionsBytes()
+		_ = quote.Nbbo()
+		_ = quote.Tape()
+		_ = quote.ReceivedAt()
 	}
 }
