@@ -1,0 +1,44 @@
+karmem nemesis @golang.package(`karmem`);  
+  
+struct Quote table {
+  Symbol      []char;
+  Conditions  []byte;
+  Timestamp   uint64;
+  ReceivedAt  uint64;
+  BidPrice    float64;
+  AskPrice    float64;
+  BidSize     uint32;
+  AskSize     uint32;
+  BidExchange byte;
+  AskExchange byte;
+  Tape        byte;
+  Nbbo        bool;
+}
+
+struct Trade table {
+  Symbol     []char;
+  Conditions []byte;
+  ID         uint64;
+  Timestamp  uint64;
+  ReceivedAt uint64;
+  Price      float64;
+  Volume     uint32;
+  Exchange   byte;
+  Tape       byte;
+}
+
+struct RawQuote inline {
+    Data Quote;
+}
+
+struct RawTrade inline {
+    Data Trade;
+}
+
+struct QuoteBatch table {
+  Quotes []RawQuote;
+}
+
+struct TradeBatch table {
+  Trades []RawTrade;
+}

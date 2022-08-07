@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"time"
 
-	"leki75/flbtest/schema/flatbuf"
-
 	flatbuffers "github.com/google/flatbuffers/go"
+
+	"leki75/flbtest/schema/flatbuf"
 )
 
 var now = uint64(time.Now().UnixNano())
 
 func main() {
-	fmt.Println("QuoteBatch:", len(quoteBatch()))
-	fmt.Println("RawQuoteBatch:", len(rawQuoteBatch()))
+	fmt.Println("FlatbuffersQuoteBatch:", len(quoteBatch()))
+	fmt.Println("FlatbuffersRawQuoteBatch:", len(rawQuoteBatch()))
 }
 
 func quoteBatch() []byte {

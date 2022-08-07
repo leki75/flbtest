@@ -6,7 +6,7 @@ import (
 	"leki75/flbtest/schema/flatbuf"
 )
 
-func TestQuoteBatch(t *testing.T) {
+func TestFlatbuffersQuoteBatch(t *testing.T) {
 	batch := flatbuf.GetRootAsQuoteBatch(quoteBatch(), 0)
 	{ // quote1
 		quote := new(flatbuf.Quote)
@@ -28,7 +28,7 @@ func TestQuoteBatch(t *testing.T) {
 	}
 }
 
-func TestRawQuoteBatch(t *testing.T) {
+func TestFlatbuffersRawQuoteBatch(t *testing.T) {
 	batch := flatbuf.GetRootAsRawQuoteBatch(rawQuoteBatch(), 0)
 	{ // quote1
 		rawQuote := new(flatbuf.RawQuote)
@@ -52,13 +52,13 @@ func TestRawQuoteBatch(t *testing.T) {
 	}
 }
 
-func BenchmarkQuoteMarshal(b *testing.B) {
+func BenchmarkFlatbuffersQuoteMarshal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = quoteBatch()
 	}
 }
 
-func BenchmarkQuoteUnmarshal(b *testing.B) {
+func BenchmarkFlatbuffersQuoteUnmarshal(b *testing.B) {
 	quote := new(flatbuf.Quote)
 	qb := quoteBatch()
 	b.ResetTimer()
@@ -96,13 +96,13 @@ func BenchmarkQuoteUnmarshal(b *testing.B) {
 	}
 }
 
-func BenchmarkRawQuoteMarshal(b *testing.B) {
+func BenchmarkFlatbuffersRawQuoteMarshal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = rawQuoteBatch()
 	}
 }
 
-func BenchmarkRawQuoteUnmarshal(b *testing.B) {
+func BenchmarkFlatbuffersRawQuoteUnmarshal(b *testing.B) {
 	var quote *flatbuf.Quote
 	rawQuote := new(flatbuf.RawQuote)
 	qb := rawQuoteBatch()
