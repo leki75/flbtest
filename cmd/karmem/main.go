@@ -5,6 +5,7 @@ import (
 	"time"
 	"unsafe"
 
+	_ "karmem.org/cmd/karmem/kmparser"
 	karmemgo "karmem.org/golang"
 
 	"leki75/flbtest/schema/karmem"
@@ -55,7 +56,7 @@ func quoteBatch() []byte {
 		},
 	}
 
-	writer := karmemgo.NewWriter(256)
+	writer := karmemgo.NewWriter(128 * len(batch.Quotes))
 	if _, err := batch.WriteAsRoot(writer); err != nil {
 		panic(err)
 	}
@@ -95,7 +96,7 @@ func tradeBatch() []byte {
 		},
 	}
 
-	writer := karmemgo.NewWriter(256)
+	writer := karmemgo.NewWriter(128 * len(batch.Trades))
 	if _, err := batch.WriteAsRoot(writer); err != nil {
 		panic(err)
 	}
