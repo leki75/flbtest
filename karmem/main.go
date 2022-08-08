@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"time"
+	"unsafe"
 
 	karmemgo "karmem.org/golang"
 
@@ -12,14 +13,14 @@ import (
 var now = uint64(time.Now().UnixNano())
 
 func main() {
-	fmt.Println("KarmemQuoteBatch:", len(quoteBatch()))
-	fmt.Println("KarmemTradeBatch:", len(tradeBatch()))
+	fmt.Println("KarmemQuoteBatch:", len(quoteBatch()), unsafe.Sizeof(karmem.Quote{}))
+	fmt.Println("KarmemTradeBatch:", len(tradeBatch()), unsafe.Sizeof(karmem.Trade{}))
 }
 
 func quoteBatch() []byte {
 	quote1 := karmem.Quote{
-		Symbol:      "AAPL",
-		Conditions:  []byte{'C', 'D'},
+		Symbol:      [11]byte{'A', 'A', 'P', 'L'},
+		Conditions:  [2]byte{'C', 'D'},
 		Timestamp:   now,
 		ReceivedAt:  now,
 		BidPrice:    100.0,
@@ -33,8 +34,8 @@ func quoteBatch() []byte {
 	}
 
 	quote2 := karmem.Quote{
-		Symbol:      "TSLA",
-		Conditions:  []byte{'H', 'I'},
+		Symbol:      [11]byte{'T', 'S', 'L', 'A'},
+		Conditions:  [2]byte{'H', 'I'},
 		Timestamp:   now,
 		ReceivedAt:  now,
 		BidPrice:    300.0,
@@ -48,9 +49,9 @@ func quoteBatch() []byte {
 	}
 
 	batch := karmem.QuoteBatch{
-		Quotes: []karmem.RawQuote{
-			{Data: quote1},
-			{Data: quote2},
+		Quotes: []karmem.Quote{
+			quote1,
+			quote2,
 		},
 	}
 
@@ -64,8 +65,8 @@ func quoteBatch() []byte {
 
 func tradeBatch() []byte {
 	trade1 := karmem.Trade{
-		Symbol:     "AAPL",
-		Conditions: []byte{'A', 'B', 'C', 'D'},
+		Symbol:     [11]byte{'A', 'A', 'P', 'L'},
+		Conditions: [4]byte{'A', 'B', 'C', 'D'},
 		ID:         12345678,
 		Timestamp:  now,
 		ReceivedAt: now,
@@ -76,8 +77,8 @@ func tradeBatch() []byte {
 	}
 
 	trade2 := karmem.Trade{
-		Symbol:     "AAPL",
-		Conditions: []byte{'G', 'H', 'I', 'J'},
+		Symbol:     [11]byte{'T', 'S', 'L', 'A'},
+		Conditions: [4]byte{'G', 'H', 'I', 'J'},
 		ID:         87654321,
 		Timestamp:  now,
 		ReceivedAt: now,
@@ -88,9 +89,9 @@ func tradeBatch() []byte {
 	}
 
 	batch := karmem.TradeBatch{
-		Trades: []karmem.RawTrade{
-			{Data: trade1},
-			{Data: trade2},
+		Trades: []karmem.Trade{
+			trade1,
+			trade2,
 		},
 	}
 

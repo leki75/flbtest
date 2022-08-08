@@ -14,21 +14,19 @@ type (
 const (
 	PacketIdentifierQuote      = 8596760148279994604
 	PacketIdentifierTrade      = 6208342187296333386
-	PacketIdentifierRawQuote   = 3087845087638307936
-	PacketIdentifierRawTrade   = 1533053534069801195
 	PacketIdentifierQuoteBatch = 8603685289548553011
 	PacketIdentifierTradeBatch = 14427887524916167865
 )
 
 type Quote struct {
-	Symbol      string
-	Conditions  []byte
 	Timestamp   uint64
 	ReceivedAt  uint64
 	BidPrice    float64
 	AskPrice    float64
 	BidSize     uint32
 	AskSize     uint32
+	Symbol      [11]byte
+	Conditions  [2]byte
 	BidExchange byte
 	AskExchange byte
 	Tape        byte
@@ -40,14 +38,14 @@ func (x *Quote) PacketIdentifier() PacketIdentifier {
 }
 
 func (x *Quote) Reset() {
-	x.Symbol = x.Symbol[:0]
-	x.Conditions = x.Conditions[:0]
 	x.Timestamp = 0
 	x.ReceivedAt = 0
 	x.BidPrice = 0
 	x.AskPrice = 0
 	x.BidSize = 0
 	x.AskSize = 0
+	x.Symbol = [11]byte{}
+	x.Conditions = [2]byte{}
 	x.BidExchange = 0
 	x.AskExchange = 0
 	x.Tape = 0
@@ -60,55 +58,36 @@ func (x *Quote) WriteAsRoot(writer *karmem.Writer) (offset uint, err error) {
 
 func (x *Quote) Write(writer *karmem.Writer, start uint) (offset uint, err error) {
 	offset = start
-	size := uint(80)
+	size := uint(64)
 	if offset == 0 {
 		offset, err = writer.Alloc(size)
 		if err != nil {
 			return 0, err
 		}
 	}
-	writer.Write4At(offset, uint32(72))
-	__SymbolSize := uint(1 * len(x.Symbol))
-	__SymbolOffset, err := writer.Alloc(__SymbolSize)
-	if err != nil {
-		return 0, err
-	}
-	writer.Write4At(offset+4, uint32(__SymbolOffset))
-	writer.Write4At(offset+4+4, uint32(__SymbolSize))
-	writer.Write4At(offset+4+4+4, 1)
-	__SymbolSlice := [3]uint{*(*uint)(unsafe.Pointer(&x.Symbol)), __SymbolSize, __SymbolSize}
-	writer.WriteAt(__SymbolOffset, *(*[]byte)(unsafe.Pointer(&__SymbolSlice)))
-	__ConditionsSize := uint(1 * len(x.Conditions))
-	__ConditionsOffset, err := writer.Alloc(__ConditionsSize)
-	if err != nil {
-		return 0, err
-	}
-	writer.Write4At(offset+16, uint32(__ConditionsOffset))
-	writer.Write4At(offset+16+4, uint32(__ConditionsSize))
-	writer.Write4At(offset+16+4+4, 1)
-	__ConditionsSlice := *(*[3]uint)(unsafe.Pointer(&x.Conditions))
-	__ConditionsSlice[1] = __ConditionsSize
-	__ConditionsSlice[2] = __ConditionsSize
-	writer.WriteAt(__ConditionsOffset, *(*[]byte)(unsafe.Pointer(&__ConditionsSlice)))
-	__TimestampOffset := offset + 28
+	__TimestampOffset := offset + 0
 	writer.Write8At(__TimestampOffset, *(*uint64)(unsafe.Pointer(&x.Timestamp)))
-	__ReceivedAtOffset := offset + 36
+	__ReceivedAtOffset := offset + 8
 	writer.Write8At(__ReceivedAtOffset, *(*uint64)(unsafe.Pointer(&x.ReceivedAt)))
-	__BidPriceOffset := offset + 44
+	__BidPriceOffset := offset + 16
 	writer.Write8At(__BidPriceOffset, *(*uint64)(unsafe.Pointer(&x.BidPrice)))
-	__AskPriceOffset := offset + 52
+	__AskPriceOffset := offset + 24
 	writer.Write8At(__AskPriceOffset, *(*uint64)(unsafe.Pointer(&x.AskPrice)))
-	__BidSizeOffset := offset + 60
+	__BidSizeOffset := offset + 32
 	writer.Write4At(__BidSizeOffset, *(*uint32)(unsafe.Pointer(&x.BidSize)))
-	__AskSizeOffset := offset + 64
+	__AskSizeOffset := offset + 36
 	writer.Write4At(__AskSizeOffset, *(*uint32)(unsafe.Pointer(&x.AskSize)))
-	__BidExchangeOffset := offset + 68
+	__SymbolOffset := offset + 40
+	writer.WriteAt(__SymbolOffset, (*[11]byte)(unsafe.Pointer(&x.Symbol))[:])
+	__ConditionsOffset := offset + 51
+	writer.WriteAt(__ConditionsOffset, (*[2]byte)(unsafe.Pointer(&x.Conditions))[:])
+	__BidExchangeOffset := offset + 53
 	writer.Write1At(__BidExchangeOffset, *(*uint8)(unsafe.Pointer(&x.BidExchange)))
-	__AskExchangeOffset := offset + 69
+	__AskExchangeOffset := offset + 54
 	writer.Write1At(__AskExchangeOffset, *(*uint8)(unsafe.Pointer(&x.AskExchange)))
-	__TapeOffset := offset + 70
+	__TapeOffset := offset + 55
 	writer.Write1At(__TapeOffset, *(*uint8)(unsafe.Pointer(&x.Tape)))
-	__NbboOffset := offset + 71
+	__NbboOffset := offset + 56
 	writer.Write1At(__NbboOffset, *(*uint8)(unsafe.Pointer(&x.Nbbo)))
 
 	return offset, nil
@@ -119,25 +98,24 @@ func (x *Quote) ReadAsRoot(reader *karmem.Reader) {
 }
 
 func (x *Quote) Read(viewer *QuoteViewer, reader *karmem.Reader) {
-	x.Symbol = string(viewer.Symbol(reader))
-	__ConditionsSlice := viewer.Conditions(reader)
-	__ConditionsLen := len(__ConditionsSlice)
-	if __ConditionsLen > cap(x.Conditions) {
-		x.Conditions = append(x.Conditions, make([]byte, __ConditionsLen-len(x.Conditions))...)
-	} else if __ConditionsLen > len(x.Conditions) {
-		x.Conditions = x.Conditions[:__ConditionsLen]
-	}
-	copy(x.Conditions, __ConditionsSlice)
-	for i := __ConditionsLen; i < len(x.Conditions); i++ {
-		x.Conditions[i] = 0
-	}
-	x.Conditions = x.Conditions[:__ConditionsLen]
 	x.Timestamp = viewer.Timestamp()
 	x.ReceivedAt = viewer.ReceivedAt()
 	x.BidPrice = viewer.BidPrice()
 	x.AskPrice = viewer.AskPrice()
 	x.BidSize = viewer.BidSize()
 	x.AskSize = viewer.AskSize()
+	__SymbolSlice := viewer.Symbol()
+	__SymbolLen := len(__SymbolSlice)
+	copy(x.Symbol[:], __SymbolSlice)
+	for i := __SymbolLen; i < len(x.Symbol); i++ {
+		x.Symbol[i] = 0
+	}
+	__ConditionsSlice := viewer.Conditions()
+	__ConditionsLen := len(__ConditionsSlice)
+	copy(x.Conditions[:], __ConditionsSlice)
+	for i := __ConditionsLen; i < len(x.Conditions); i++ {
+		x.Conditions[i] = 0
+	}
 	x.BidExchange = viewer.BidExchange()
 	x.AskExchange = viewer.AskExchange()
 	x.Tape = viewer.Tape()
@@ -145,13 +123,13 @@ func (x *Quote) Read(viewer *QuoteViewer, reader *karmem.Reader) {
 }
 
 type Trade struct {
-	Symbol     string
-	Conditions []byte
 	ID         uint64
 	Timestamp  uint64
 	ReceivedAt uint64
 	Price      float64
 	Volume     uint32
+	Conditions [4]byte
+	Symbol     [11]byte
 	Exchange   byte
 	Tape       byte
 }
@@ -161,13 +139,13 @@ func (x *Trade) PacketIdentifier() PacketIdentifier {
 }
 
 func (x *Trade) Reset() {
-	x.Symbol = x.Symbol[:0]
-	x.Conditions = x.Conditions[:0]
 	x.ID = 0
 	x.Timestamp = 0
 	x.ReceivedAt = 0
 	x.Price = 0
 	x.Volume = 0
+	x.Conditions = [4]byte{}
+	x.Symbol = [11]byte{}
 	x.Exchange = 0
 	x.Tape = 0
 }
@@ -178,49 +156,30 @@ func (x *Trade) WriteAsRoot(writer *karmem.Writer) (offset uint, err error) {
 
 func (x *Trade) Write(writer *karmem.Writer, start uint) (offset uint, err error) {
 	offset = start
-	size := uint(72)
+	size := uint(56)
 	if offset == 0 {
 		offset, err = writer.Alloc(size)
 		if err != nil {
 			return 0, err
 		}
 	}
-	writer.Write4At(offset, uint32(66))
-	__SymbolSize := uint(1 * len(x.Symbol))
-	__SymbolOffset, err := writer.Alloc(__SymbolSize)
-	if err != nil {
-		return 0, err
-	}
-	writer.Write4At(offset+4, uint32(__SymbolOffset))
-	writer.Write4At(offset+4+4, uint32(__SymbolSize))
-	writer.Write4At(offset+4+4+4, 1)
-	__SymbolSlice := [3]uint{*(*uint)(unsafe.Pointer(&x.Symbol)), __SymbolSize, __SymbolSize}
-	writer.WriteAt(__SymbolOffset, *(*[]byte)(unsafe.Pointer(&__SymbolSlice)))
-	__ConditionsSize := uint(1 * len(x.Conditions))
-	__ConditionsOffset, err := writer.Alloc(__ConditionsSize)
-	if err != nil {
-		return 0, err
-	}
-	writer.Write4At(offset+16, uint32(__ConditionsOffset))
-	writer.Write4At(offset+16+4, uint32(__ConditionsSize))
-	writer.Write4At(offset+16+4+4, 1)
-	__ConditionsSlice := *(*[3]uint)(unsafe.Pointer(&x.Conditions))
-	__ConditionsSlice[1] = __ConditionsSize
-	__ConditionsSlice[2] = __ConditionsSize
-	writer.WriteAt(__ConditionsOffset, *(*[]byte)(unsafe.Pointer(&__ConditionsSlice)))
-	__IDOffset := offset + 28
+	__IDOffset := offset + 0
 	writer.Write8At(__IDOffset, *(*uint64)(unsafe.Pointer(&x.ID)))
-	__TimestampOffset := offset + 36
+	__TimestampOffset := offset + 8
 	writer.Write8At(__TimestampOffset, *(*uint64)(unsafe.Pointer(&x.Timestamp)))
-	__ReceivedAtOffset := offset + 44
+	__ReceivedAtOffset := offset + 16
 	writer.Write8At(__ReceivedAtOffset, *(*uint64)(unsafe.Pointer(&x.ReceivedAt)))
-	__PriceOffset := offset + 52
+	__PriceOffset := offset + 24
 	writer.Write8At(__PriceOffset, *(*uint64)(unsafe.Pointer(&x.Price)))
-	__VolumeOffset := offset + 60
+	__VolumeOffset := offset + 32
 	writer.Write4At(__VolumeOffset, *(*uint32)(unsafe.Pointer(&x.Volume)))
-	__ExchangeOffset := offset + 64
+	__ConditionsOffset := offset + 36
+	writer.WriteAt(__ConditionsOffset, (*[4]byte)(unsafe.Pointer(&x.Conditions))[:])
+	__SymbolOffset := offset + 40
+	writer.WriteAt(__SymbolOffset, (*[11]byte)(unsafe.Pointer(&x.Symbol))[:])
+	__ExchangeOffset := offset + 51
 	writer.Write1At(__ExchangeOffset, *(*uint8)(unsafe.Pointer(&x.Exchange)))
-	__TapeOffset := offset + 65
+	__TapeOffset := offset + 52
 	writer.Write1At(__TapeOffset, *(*uint8)(unsafe.Pointer(&x.Tape)))
 
 	return offset, nil
@@ -231,122 +190,29 @@ func (x *Trade) ReadAsRoot(reader *karmem.Reader) {
 }
 
 func (x *Trade) Read(viewer *TradeViewer, reader *karmem.Reader) {
-	x.Symbol = string(viewer.Symbol(reader))
-	__ConditionsSlice := viewer.Conditions(reader)
-	__ConditionsLen := len(__ConditionsSlice)
-	if __ConditionsLen > cap(x.Conditions) {
-		x.Conditions = append(x.Conditions, make([]byte, __ConditionsLen-len(x.Conditions))...)
-	} else if __ConditionsLen > len(x.Conditions) {
-		x.Conditions = x.Conditions[:__ConditionsLen]
-	}
-	copy(x.Conditions, __ConditionsSlice)
-	for i := __ConditionsLen; i < len(x.Conditions); i++ {
-		x.Conditions[i] = 0
-	}
-	x.Conditions = x.Conditions[:__ConditionsLen]
 	x.ID = viewer.ID()
 	x.Timestamp = viewer.Timestamp()
 	x.ReceivedAt = viewer.ReceivedAt()
 	x.Price = viewer.Price()
 	x.Volume = viewer.Volume()
+	__ConditionsSlice := viewer.Conditions()
+	__ConditionsLen := len(__ConditionsSlice)
+	copy(x.Conditions[:], __ConditionsSlice)
+	for i := __ConditionsLen; i < len(x.Conditions); i++ {
+		x.Conditions[i] = 0
+	}
+	__SymbolSlice := viewer.Symbol()
+	__SymbolLen := len(__SymbolSlice)
+	copy(x.Symbol[:], __SymbolSlice)
+	for i := __SymbolLen; i < len(x.Symbol); i++ {
+		x.Symbol[i] = 0
+	}
 	x.Exchange = viewer.Exchange()
 	x.Tape = viewer.Tape()
 }
 
-type RawQuote struct {
-	Data Quote
-}
-
-func (x *RawQuote) PacketIdentifier() PacketIdentifier {
-	return PacketIdentifierRawQuote
-}
-
-func (x *RawQuote) Reset() {
-	x.Data.Reset()
-}
-
-func (x *RawQuote) WriteAsRoot(writer *karmem.Writer) (offset uint, err error) {
-	return x.Write(writer, 0)
-}
-
-func (x *RawQuote) Write(writer *karmem.Writer, start uint) (offset uint, err error) {
-	offset = start
-	size := uint(8)
-	if offset == 0 {
-		offset, err = writer.Alloc(size)
-		if err != nil {
-			return 0, err
-		}
-	}
-	__DataSize := uint(80)
-	__DataOffset, err := writer.Alloc(__DataSize)
-	if err != nil {
-		return 0, err
-	}
-	writer.Write4At(offset+0, uint32(__DataOffset))
-	if _, err := x.Data.Write(writer, __DataOffset); err != nil {
-		return offset, err
-	}
-
-	return offset, nil
-}
-
-func (x *RawQuote) ReadAsRoot(reader *karmem.Reader) {
-	x.Read(NewRawQuoteViewer(reader, 0), reader)
-}
-
-func (x *RawQuote) Read(viewer *RawQuoteViewer, reader *karmem.Reader) {
-	x.Data.Read(viewer.Data(reader), reader)
-}
-
-type RawTrade struct {
-	Data Trade
-}
-
-func (x *RawTrade) PacketIdentifier() PacketIdentifier {
-	return PacketIdentifierRawTrade
-}
-
-func (x *RawTrade) Reset() {
-	x.Data.Reset()
-}
-
-func (x *RawTrade) WriteAsRoot(writer *karmem.Writer) (offset uint, err error) {
-	return x.Write(writer, 0)
-}
-
-func (x *RawTrade) Write(writer *karmem.Writer, start uint) (offset uint, err error) {
-	offset = start
-	size := uint(8)
-	if offset == 0 {
-		offset, err = writer.Alloc(size)
-		if err != nil {
-			return 0, err
-		}
-	}
-	__DataSize := uint(72)
-	__DataOffset, err := writer.Alloc(__DataSize)
-	if err != nil {
-		return 0, err
-	}
-	writer.Write4At(offset+0, uint32(__DataOffset))
-	if _, err := x.Data.Write(writer, __DataOffset); err != nil {
-		return offset, err
-	}
-
-	return offset, nil
-}
-
-func (x *RawTrade) ReadAsRoot(reader *karmem.Reader) {
-	x.Read(NewRawTradeViewer(reader, 0), reader)
-}
-
-func (x *RawTrade) Read(viewer *RawTradeViewer, reader *karmem.Reader) {
-	x.Data.Read(viewer.Data(reader), reader)
-}
-
 type QuoteBatch struct {
-	Quotes []RawQuote
+	Quotes []Quote
 }
 
 func (x *QuoteBatch) PacketIdentifier() PacketIdentifier {
@@ -374,19 +240,19 @@ func (x *QuoteBatch) Write(writer *karmem.Writer, start uint) (offset uint, err 
 		}
 	}
 	writer.Write4At(offset, uint32(16))
-	__QuotesSize := uint(8 * len(x.Quotes))
+	__QuotesSize := uint(64 * len(x.Quotes))
 	__QuotesOffset, err := writer.Alloc(__QuotesSize)
 	if err != nil {
 		return 0, err
 	}
 	writer.Write4At(offset+4, uint32(__QuotesOffset))
 	writer.Write4At(offset+4+4, uint32(__QuotesSize))
-	writer.Write4At(offset+4+4+4, 8)
+	writer.Write4At(offset+4+4+4, 64)
 	for i := range x.Quotes {
 		if _, err := x.Quotes[i].Write(writer, __QuotesOffset); err != nil {
 			return offset, err
 		}
-		__QuotesOffset += 8
+		__QuotesOffset += 64
 	}
 
 	return offset, nil
@@ -400,7 +266,7 @@ func (x *QuoteBatch) Read(viewer *QuoteBatchViewer, reader *karmem.Reader) {
 	__QuotesSlice := viewer.Quotes(reader)
 	__QuotesLen := len(__QuotesSlice)
 	if __QuotesLen > cap(x.Quotes) {
-		x.Quotes = append(x.Quotes, make([]RawQuote, __QuotesLen-len(x.Quotes))...)
+		x.Quotes = append(x.Quotes, make([]Quote, __QuotesLen-len(x.Quotes))...)
 	} else if __QuotesLen > len(x.Quotes) {
 		x.Quotes = x.Quotes[:__QuotesLen]
 	}
@@ -415,7 +281,7 @@ func (x *QuoteBatch) Read(viewer *QuoteBatchViewer, reader *karmem.Reader) {
 }
 
 type TradeBatch struct {
-	Trades []RawTrade
+	Trades []Trade
 }
 
 func (x *TradeBatch) PacketIdentifier() PacketIdentifier {
@@ -443,19 +309,19 @@ func (x *TradeBatch) Write(writer *karmem.Writer, start uint) (offset uint, err 
 		}
 	}
 	writer.Write4At(offset, uint32(16))
-	__TradesSize := uint(8 * len(x.Trades))
+	__TradesSize := uint(56 * len(x.Trades))
 	__TradesOffset, err := writer.Alloc(__TradesSize)
 	if err != nil {
 		return 0, err
 	}
 	writer.Write4At(offset+4, uint32(__TradesOffset))
 	writer.Write4At(offset+4+4, uint32(__TradesSize))
-	writer.Write4At(offset+4+4+4, 8)
+	writer.Write4At(offset+4+4+4, 56)
 	for i := range x.Trades {
 		if _, err := x.Trades[i].Write(writer, __TradesOffset); err != nil {
 			return offset, err
 		}
-		__TradesOffset += 8
+		__TradesOffset += 56
 	}
 
 	return offset, nil
@@ -469,7 +335,7 @@ func (x *TradeBatch) Read(viewer *TradeBatchViewer, reader *karmem.Reader) {
 	__TradesSlice := viewer.Trades(reader)
 	__TradesLen := len(__TradesSlice)
 	if __TradesLen > cap(x.Trades) {
-		x.Trades = append(x.Trades, make([]RawTrade, __TradesLen-len(x.Trades))...)
+		x.Trades = append(x.Trades, make([]Trade, __TradesLen-len(x.Trades))...)
 	} else if __TradesLen > len(x.Trades) {
 		x.Trades = x.Trades[:__TradesLen]
 	}
@@ -484,265 +350,114 @@ func (x *TradeBatch) Read(viewer *TradeBatchViewer, reader *karmem.Reader) {
 }
 
 type QuoteViewer struct {
-	_data [80]byte
+	_data [64]byte
 }
 
 var _NullQuoteViewer = QuoteViewer{}
 
 func NewQuoteViewer(reader *karmem.Reader, offset uint32) (v *QuoteViewer) {
-	if !reader.IsValidOffset(offset, 8) {
+	if !reader.IsValidOffset(offset, 64) {
 		return &_NullQuoteViewer
 	}
 	v = (*QuoteViewer)(unsafe.Add(reader.Pointer, offset))
-	if !reader.IsValidOffset(offset, v.size()) {
-		return &_NullQuoteViewer
-	}
 	return v
 }
 
 func (x *QuoteViewer) size() uint32 {
-	return *(*uint32)(unsafe.Pointer(&x._data))
-}
-func (x *QuoteViewer) Symbol(reader *karmem.Reader) (v []byte) {
-	if 4+12 > x.size() {
-		return []byte{}
-	}
-	offset := *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 4))
-	size := *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 4+4))
-	if !reader.IsValidOffset(offset, size) {
-		return []byte{}
-	}
-	length := uintptr(size / 1)
-	slice := [3]uintptr{
-		uintptr(unsafe.Add(reader.Pointer, offset)), length, length,
-	}
-	return *(*[]byte)(unsafe.Pointer(&slice))
-}
-func (x *QuoteViewer) Conditions(reader *karmem.Reader) (v []byte) {
-	if 16+12 > x.size() {
-		return []byte{}
-	}
-	offset := *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 16))
-	size := *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 16+4))
-	if !reader.IsValidOffset(offset, size) {
-		return []byte{}
-	}
-	length := uintptr(size / 1)
-	slice := [3]uintptr{
-		uintptr(unsafe.Add(reader.Pointer, offset)), length, length,
-	}
-	return *(*[]byte)(unsafe.Pointer(&slice))
+	return 64
 }
 func (x *QuoteViewer) Timestamp() (v uint64) {
-	if 28+8 > x.size() {
-		return v
-	}
-	return *(*uint64)(unsafe.Add(unsafe.Pointer(&x._data), 28))
+	return *(*uint64)(unsafe.Add(unsafe.Pointer(&x._data), 0))
 }
 func (x *QuoteViewer) ReceivedAt() (v uint64) {
-	if 36+8 > x.size() {
-		return v
-	}
-	return *(*uint64)(unsafe.Add(unsafe.Pointer(&x._data), 36))
+	return *(*uint64)(unsafe.Add(unsafe.Pointer(&x._data), 8))
 }
 func (x *QuoteViewer) BidPrice() (v float64) {
-	if 44+8 > x.size() {
-		return v
-	}
-	return *(*float64)(unsafe.Add(unsafe.Pointer(&x._data), 44))
+	return *(*float64)(unsafe.Add(unsafe.Pointer(&x._data), 16))
 }
 func (x *QuoteViewer) AskPrice() (v float64) {
-	if 52+8 > x.size() {
-		return v
-	}
-	return *(*float64)(unsafe.Add(unsafe.Pointer(&x._data), 52))
+	return *(*float64)(unsafe.Add(unsafe.Pointer(&x._data), 24))
 }
 func (x *QuoteViewer) BidSize() (v uint32) {
-	if 60+4 > x.size() {
-		return v
-	}
-	return *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 60))
+	return *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 32))
 }
 func (x *QuoteViewer) AskSize() (v uint32) {
-	if 64+4 > x.size() {
-		return v
+	return *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 36))
+}
+func (x *QuoteViewer) Symbol() (v []byte) {
+	slice := [3]uintptr{
+		uintptr(unsafe.Add(unsafe.Pointer(&x._data), 40)), 11, 11,
 	}
-	return *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 64))
+	return *(*[]byte)(unsafe.Pointer(&slice))
+}
+func (x *QuoteViewer) Conditions() (v []byte) {
+	slice := [3]uintptr{
+		uintptr(unsafe.Add(unsafe.Pointer(&x._data), 51)), 2, 2,
+	}
+	return *(*[]byte)(unsafe.Pointer(&slice))
 }
 func (x *QuoteViewer) BidExchange() (v byte) {
-	if 68+1 > x.size() {
-		return v
-	}
-	return *(*byte)(unsafe.Add(unsafe.Pointer(&x._data), 68))
+	return *(*byte)(unsafe.Add(unsafe.Pointer(&x._data), 53))
 }
 func (x *QuoteViewer) AskExchange() (v byte) {
-	if 69+1 > x.size() {
-		return v
-	}
-	return *(*byte)(unsafe.Add(unsafe.Pointer(&x._data), 69))
+	return *(*byte)(unsafe.Add(unsafe.Pointer(&x._data), 54))
 }
 func (x *QuoteViewer) Tape() (v byte) {
-	if 70+1 > x.size() {
-		return v
-	}
-	return *(*byte)(unsafe.Add(unsafe.Pointer(&x._data), 70))
+	return *(*byte)(unsafe.Add(unsafe.Pointer(&x._data), 55))
 }
 func (x *QuoteViewer) Nbbo() (v bool) {
-	if 71+1 > x.size() {
-		return v
-	}
-	return *(*bool)(unsafe.Add(unsafe.Pointer(&x._data), 71))
+	return *(*bool)(unsafe.Add(unsafe.Pointer(&x._data), 56))
 }
 
 type TradeViewer struct {
-	_data [72]byte
+	_data [56]byte
 }
 
 var _NullTradeViewer = TradeViewer{}
 
 func NewTradeViewer(reader *karmem.Reader, offset uint32) (v *TradeViewer) {
-	if !reader.IsValidOffset(offset, 8) {
+	if !reader.IsValidOffset(offset, 56) {
 		return &_NullTradeViewer
 	}
 	v = (*TradeViewer)(unsafe.Add(reader.Pointer, offset))
-	if !reader.IsValidOffset(offset, v.size()) {
-		return &_NullTradeViewer
-	}
 	return v
 }
 
 func (x *TradeViewer) size() uint32 {
-	return *(*uint32)(unsafe.Pointer(&x._data))
-}
-func (x *TradeViewer) Symbol(reader *karmem.Reader) (v []byte) {
-	if 4+12 > x.size() {
-		return []byte{}
-	}
-	offset := *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 4))
-	size := *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 4+4))
-	if !reader.IsValidOffset(offset, size) {
-		return []byte{}
-	}
-	length := uintptr(size / 1)
-	slice := [3]uintptr{
-		uintptr(unsafe.Add(reader.Pointer, offset)), length, length,
-	}
-	return *(*[]byte)(unsafe.Pointer(&slice))
-}
-func (x *TradeViewer) Conditions(reader *karmem.Reader) (v []byte) {
-	if 16+12 > x.size() {
-		return []byte{}
-	}
-	offset := *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 16))
-	size := *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 16+4))
-	if !reader.IsValidOffset(offset, size) {
-		return []byte{}
-	}
-	length := uintptr(size / 1)
-	slice := [3]uintptr{
-		uintptr(unsafe.Add(reader.Pointer, offset)), length, length,
-	}
-	return *(*[]byte)(unsafe.Pointer(&slice))
+	return 56
 }
 func (x *TradeViewer) ID() (v uint64) {
-	if 28+8 > x.size() {
-		return v
-	}
-	return *(*uint64)(unsafe.Add(unsafe.Pointer(&x._data), 28))
+	return *(*uint64)(unsafe.Add(unsafe.Pointer(&x._data), 0))
 }
 func (x *TradeViewer) Timestamp() (v uint64) {
-	if 36+8 > x.size() {
-		return v
-	}
-	return *(*uint64)(unsafe.Add(unsafe.Pointer(&x._data), 36))
+	return *(*uint64)(unsafe.Add(unsafe.Pointer(&x._data), 8))
 }
 func (x *TradeViewer) ReceivedAt() (v uint64) {
-	if 44+8 > x.size() {
-		return v
-	}
-	return *(*uint64)(unsafe.Add(unsafe.Pointer(&x._data), 44))
+	return *(*uint64)(unsafe.Add(unsafe.Pointer(&x._data), 16))
 }
 func (x *TradeViewer) Price() (v float64) {
-	if 52+8 > x.size() {
-		return v
-	}
-	return *(*float64)(unsafe.Add(unsafe.Pointer(&x._data), 52))
+	return *(*float64)(unsafe.Add(unsafe.Pointer(&x._data), 24))
 }
 func (x *TradeViewer) Volume() (v uint32) {
-	if 60+4 > x.size() {
-		return v
+	return *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 32))
+}
+func (x *TradeViewer) Conditions() (v []byte) {
+	slice := [3]uintptr{
+		uintptr(unsafe.Add(unsafe.Pointer(&x._data), 36)), 4, 4,
 	}
-	return *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 60))
+	return *(*[]byte)(unsafe.Pointer(&slice))
+}
+func (x *TradeViewer) Symbol() (v []byte) {
+	slice := [3]uintptr{
+		uintptr(unsafe.Add(unsafe.Pointer(&x._data), 40)), 11, 11,
+	}
+	return *(*[]byte)(unsafe.Pointer(&slice))
 }
 func (x *TradeViewer) Exchange() (v byte) {
-	if 64+1 > x.size() {
-		return v
-	}
-	return *(*byte)(unsafe.Add(unsafe.Pointer(&x._data), 64))
+	return *(*byte)(unsafe.Add(unsafe.Pointer(&x._data), 51))
 }
 func (x *TradeViewer) Tape() (v byte) {
-	if 65+1 > x.size() {
-		return v
-	}
-	return *(*byte)(unsafe.Add(unsafe.Pointer(&x._data), 65))
-}
-
-type RawQuoteViewer struct {
-	_data [8]byte
-}
-
-var _NullRawQuoteViewer = RawQuoteViewer{}
-
-func NewRawQuoteViewer(reader *karmem.Reader, offset uint32) (v *RawQuoteViewer) {
-	if !reader.IsValidOffset(offset, 8) {
-		return &_NullRawQuoteViewer
-	}
-	v = (*RawQuoteViewer)(unsafe.Add(reader.Pointer, offset))
-	return v
-}
-
-func (x *RawQuoteViewer) size() uint32 {
-	return 8
-}
-func (x *RawQuoteViewer) Data(reader *karmem.Reader) (v *QuoteViewer) {
-	offset := *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 0))
-	if !reader.IsValidOffset(offset, 80) {
-		return &_NullQuoteViewer
-	}
-	v = (*QuoteViewer)(unsafe.Add(reader.Pointer, offset))
-	if !reader.IsValidOffset(offset, v.size()) {
-		return &_NullQuoteViewer
-	}
-	return v
-}
-
-type RawTradeViewer struct {
-	_data [8]byte
-}
-
-var _NullRawTradeViewer = RawTradeViewer{}
-
-func NewRawTradeViewer(reader *karmem.Reader, offset uint32) (v *RawTradeViewer) {
-	if !reader.IsValidOffset(offset, 8) {
-		return &_NullRawTradeViewer
-	}
-	v = (*RawTradeViewer)(unsafe.Add(reader.Pointer, offset))
-	return v
-}
-
-func (x *RawTradeViewer) size() uint32 {
-	return 8
-}
-func (x *RawTradeViewer) Data(reader *karmem.Reader) (v *TradeViewer) {
-	offset := *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 0))
-	if !reader.IsValidOffset(offset, 72) {
-		return &_NullTradeViewer
-	}
-	v = (*TradeViewer)(unsafe.Add(reader.Pointer, offset))
-	if !reader.IsValidOffset(offset, v.size()) {
-		return &_NullTradeViewer
-	}
-	return v
+	return *(*byte)(unsafe.Add(unsafe.Pointer(&x._data), 52))
 }
 
 type QuoteBatchViewer struct {
@@ -765,20 +480,20 @@ func NewQuoteBatchViewer(reader *karmem.Reader, offset uint32) (v *QuoteBatchVie
 func (x *QuoteBatchViewer) size() uint32 {
 	return *(*uint32)(unsafe.Pointer(&x._data))
 }
-func (x *QuoteBatchViewer) Quotes(reader *karmem.Reader) (v []RawQuoteViewer) {
+func (x *QuoteBatchViewer) Quotes(reader *karmem.Reader) (v []QuoteViewer) {
 	if 4+12 > x.size() {
-		return []RawQuoteViewer{}
+		return []QuoteViewer{}
 	}
 	offset := *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 4))
 	size := *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 4+4))
 	if !reader.IsValidOffset(offset, size) {
-		return []RawQuoteViewer{}
+		return []QuoteViewer{}
 	}
-	length := uintptr(size / 8)
+	length := uintptr(size / 64)
 	slice := [3]uintptr{
 		uintptr(unsafe.Add(reader.Pointer, offset)), length, length,
 	}
-	return *(*[]RawQuoteViewer)(unsafe.Pointer(&slice))
+	return *(*[]QuoteViewer)(unsafe.Pointer(&slice))
 }
 
 type TradeBatchViewer struct {
@@ -801,18 +516,18 @@ func NewTradeBatchViewer(reader *karmem.Reader, offset uint32) (v *TradeBatchVie
 func (x *TradeBatchViewer) size() uint32 {
 	return *(*uint32)(unsafe.Pointer(&x._data))
 }
-func (x *TradeBatchViewer) Trades(reader *karmem.Reader) (v []RawTradeViewer) {
+func (x *TradeBatchViewer) Trades(reader *karmem.Reader) (v []TradeViewer) {
 	if 4+12 > x.size() {
-		return []RawTradeViewer{}
+		return []TradeViewer{}
 	}
 	offset := *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 4))
 	size := *(*uint32)(unsafe.Add(unsafe.Pointer(&x._data), 4+4))
 	if !reader.IsValidOffset(offset, size) {
-		return []RawTradeViewer{}
+		return []TradeViewer{}
 	}
-	length := uintptr(size / 8)
+	length := uintptr(size / 56)
 	slice := [3]uintptr{
 		uintptr(unsafe.Add(reader.Pointer, offset)), length, length,
 	}
-	return *(*[]RawTradeViewer)(unsafe.Pointer(&slice))
+	return *(*[]TradeViewer)(unsafe.Pointer(&slice))
 }
